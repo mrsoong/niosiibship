@@ -1,3 +1,9 @@
+November 17, 2015
+-Steven: Made a function to draw grids 
+
+November 16, 2015
+-Steven: Finished writing the line drawing function
+
 November 15, 2015
 -Steven: Began writing a line drawing function in C
--Steven: Wrote function to draw individual pixels on VGA
+-Steven: Wrote a function to draw individual pixels on VGA

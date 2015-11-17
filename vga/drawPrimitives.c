@@ -21,7 +21,7 @@ void drawLine (int x0, int y0, int x1, int y1, short color) {
 	float error = 0;
 	if (deltax == 0) {
 		// Special case when line is vertical
-		return drawVerticalLine (x0, y0, x1, y1, color);
+		drawVerticalLine (x0, y0, x1, y1, color);
 	}
 	float deltaerr = abs (deltay/deltax);	// The slope of the line, used to keep track of how far 
 											// away the line that is being drawn is from the given line
@@ -55,3 +55,24 @@ void drawVerticalLine (int x0, int y0, int x1, int y1, short color) {
 	}
 }
 
+/* Draws a (black) grid with a size specified by the caller.
+ * Note that the size of each grid is set to 10 pixels
+ */
+void drawGrid (int x0, int y0, int rows, int columns) {
+	int cRow, cColumn;
+	int x = x0;
+	int y = y0;
+	int cellSize = 10;
+	
+	// Draw the horizontal lines first
+	for (cRow = 0; cRow <= rows; cRow++) {
+		drawLine(x, y, x, (y + (cellSize * columns)), 0);
+		x += 10;
+	}
+	
+	// Draw the vertical lines next
+	for (cColumn = 0; cColumn <= columns; cColumn++) {
+		drawLine(x, y, (x + (cellSize * rows)), y, 0);
+		y += 10;
+	}
+}
