@@ -52,7 +52,7 @@ invalid:
 	ldw r16, 28(sp)			
 	addi sp, sp, 32		#Restore the callee saved registers
 
-	movi r2, -1
+	movi r2, -1			#Return -1, which indicates that the call failed
 	ret
 
 succeeded:
@@ -66,5 +66,5 @@ succeeded:
 	ldw r16, 28(sp)			
 	addi sp, sp, 32		#Restore the callee saved registers
 
-	movi r2, 1
+	movi r2, 1			#Returns 1, which indicates that the call succeeded
 	ret

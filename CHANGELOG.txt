@@ -1,0 +1,3 @@
+November 15, 2015
+-Steven: Began writing a line drawing function in C
+-Steven: Wrote function to draw individual pixels on VGA
