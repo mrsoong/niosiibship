@@ -9,8 +9,8 @@
 
 /*
  * Draws a line w/ the fillpixel subroutine
- * Note that the x coordinate is the column (i.e 0<=x<320)
- * and the y coordinate is the row (i.e 0<=y<240)
+ * Note that the x coordinate is the column number (i.e 0<=x<=239)
+ * and the y coordinate is the row number (i.e 0<=y<=319)
  * Assumes the line segment is not just a point 
  * and that this line that starts at (x0,y0) and 
  * ends at (x1, y1) goes down and/or to the right.
@@ -22,6 +22,7 @@ void drawLine (int x0, int y0, int x1, int y1, short color) {
 	if (deltax == 0) {
 		// Special case when line is vertical
 		drawVerticalLine (x0, y0, x1, y1, color);
+		return;
 	}
 	float deltaerr = abs (deltay/deltax);	// The slope of the line, used to keep track of how far 
 											// away the line that is being drawn is from the given line
@@ -64,15 +65,23 @@ void drawGrid (int x0, int y0, int rows, int columns) {
 	int y = y0;
 	int cellSize = 10;
 	
-	// Draw the horizontal lines first
-	for (cRow = 0; cRow <= rows; cRow++) {
-		drawLine(x, y, x, (y + (cellSize * columns)), 0);
+	// Draw the vertical lines first
+	for (cColumn = 0; cColumn <= columns; cColumn++) {
+		drawLine(x, y, x, (y + (cellSize * rows)), 0);
 		x += 10;
 	}
 	
-	// Draw the vertical lines next
-	for (cColumn = 0; cColumn <= columns; cColumn++) {
-		drawLine(x, y, (x + (cellSize * rows)), y, 0);
+	// Draw the horizontal lines next
+	for (cRow = 0; cRow <= rows; cRow++) {
+		drawLine(x, y, (x + (cellSize * columns)), y, 0);
 		y += 10;
+	}
+}
+
+void fillRectangle (int x0, int y0, int deltax, int deltay, short color) {
+	int x = x0;
+	int y = y0;
+	for (y = y0; y <= (y0 + deltay - 1); y++) {
+		drawLine (x, y, (x + deltax - 1), y, color);
 	}
 }

@@ -1,4 +1,5 @@
 November 17, 2015
+-Steven: Began working on the fillRectangle function
 -Steven: Made a function to draw grids 
 
 November 16, 2015

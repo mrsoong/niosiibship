@@ -19,14 +19,26 @@ EXIT_IHANDLER:
 main:
 	movia sp, 0x3B9ACA00	/* Stack starts from the 1000^3th byte (very high up in memory) */
 	
+	addi sp, sp, -2		// Make the background blue
+	movi r4, 0
+	movi r5, 0
+	movi r6, 320
+	movi r7, 240
+	movi r8, 0b11111	
+	sth r8, 2(sp)
+	call fillRectangle
+	addi sp, sp, 2
+	
 	movi r4, 50
 	movi r5, 50
 	movi r6, 8
 	movi r7, 8
-	call drawGrid
+	call drawGrid	// Draw the first grid
 	
 	movi r4, 180
 	movi r5, 50
 	movi r6, 8
 	movi r7, 8
-	call drawGrid
+	call drawGrid	// Draw the second grid
+	
+	
