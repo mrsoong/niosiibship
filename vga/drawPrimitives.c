@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <math.h>
 
+// Prototypes
+void drawVerticalLine (int x0, int y0, int x1, int y1, short color);
+
 /*
  * Draws a line w/ the fillpixel subroutine
  * Note that the x coordinate is the column number (i.e 0<=x<=239)
@@ -71,6 +74,8 @@ void drawGrid (int x0, int y0, int rows, int columns) {
 		x += 10;
 	}
 	
+	x = x0;
+	y = y0;
 	// Draw the horizontal lines next
 	for (cRow = 0; cRow <= rows; cRow++) {
 		drawLine(x, y, (x + (cellSize * columns)), y, 0);
