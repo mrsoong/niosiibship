@@ -5,6 +5,8 @@
  
 /* Constants */
 .equ ADDR_TIMER, 0xFF202000 
+.equ ADDR_SLIDESWITCHES, 0xFF200040
+.equ ADDR_PUSHBUTTONS, 0xFF200050
 
 /* Interrupt Handler */
 .section .exceptions, "ax"
@@ -42,8 +44,73 @@ TIMER:
 		stw r3, 88(sp)
 		stw r2, 92(sp)
 		
+		movia r10, 1
+		beq r8, r10, MENU
+		
+MENU:
+		call fillBackground
 		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+		
+4XINPUT:
+		call fillBackground
+		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+		
+4YINPUT:
+		call fillBackground
+		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+		
+3XINPUT:
+		call fillBackground
+		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+		
+3YINPUT:
+		call fillBackground
+		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
 
+2XINPUT:
+		call fillBackground
+		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+		
+2YINPUT:
+		call fillBackground
+		call drawGrids
+		movi r4, 70
+		movi r5, 150
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+
+CLEANUP:
 		ldw r23, 0(sp)
 		ldw r22, 4(sp)
 		ldw r21, 8(sp)
@@ -93,15 +160,61 @@ main:
 	movi r11, 0b1
 	wrctl ctl0, r11				/* Enable bit 0 in ctl0 */
 	
-	addi sp, sp, -2		# Make the background blue
+	movia r8, 1				/* Current state of the game
+							   1 - Start screen
+							   2 - Waiting for x coordinate of the 1x4 battleship
+							   3 - Waiting for y coordinate of the 1x4 battleship
+							   4 - Waiting for x coordinate of the 1x3 cruiser
+							   5 - Waiting for y coordinate of the 1x3 cruiser
+							   6 - Waiting for x coordinate of the 1x2 destroyer
+							   7 - Waiting for y coordinate of the 1x2 destroyer
+							   8 - Victory screen
+							   9 - Game over/Defeat screen
+							 */
+	movi r9, 0b0			#Current state of push button KEY[1]
+	movi r10, 0				#Current state of the (slider) switches
+	movi r14, 9				#Highest state # in the game
+							 
+inputLoop:
+	movia r15, ADDR_PUSHBUTTONS
+	ldwio r11, 0(r15)		#Read in buttons - active low */
+	andi r13, r11, 0b10
+	mov r11, r0
+	movia r12, 0x989680		#Number of clock cycles that need to pass for 
+							#the input to stabilize (used for debouncing later)
+	bgt r13, r0, debounce
+buttonPressed:
+	#Process the switch input
+	movia r15, ADDR_SLIDESWITCHES
+	ldwio r10, 0(r15)		#Read (slider) switches
+	addi r8, r8, 1
+	bgt r8, r14, resetState
+	br inputLoop
+	
+debounce:
+	#Have to debounce the input (for ~15 msec)
+	#simply by including a delay in the program
+	addi r11, r11, 1
+	blt r11, r12, debounce
+	br buttonPressed
+	
+resetState:
+	movi r8, 1
+	br inputLoop
+	
+fillBackground:
+	addi sp, sp, -6		# Make the background blue
 	movi r4, 0
 	movi r5, 0
 	movi r6, 320
 	movi r7, 240
-	movi r8, 0b11111	
-	sth r8, 0(sp)
+	movi r15, 0b11111	
+	sth r15, 0(sp)
+	stw ra, 2(sp)
 	call fillRectangle
-	addi sp, sp, 2
+	ldw ra, 2(sp)
+	addi sp, sp, 6
+	ret
 	
 drawGrids:
 	addi sp, sp, -4

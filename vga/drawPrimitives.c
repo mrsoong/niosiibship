@@ -1,4 +1,6 @@
-/* A Bresenham's line algorithm based off the pseudocode 
+/* This file includes functions that are used to output primitives,
+ * texts and complex structures to the VGA adapter
+ * A Bresenham's line algorithm based off the pseudocode 
  * on https://en.wikipedia.org/wiki/Bresenham's_line_algorithm
  * is used to implement the drawLine function
  *
@@ -89,4 +91,21 @@ void fillRectangle (int x0, int y0, int deltax, int deltay, short color) {
 	for (y = y0; y <= (y0 + deltay - 1); y++) {
 		drawLine (x, y, (x + deltax - 1), y, color);
 	}
+}
+
+void printText (int x, int y, int state) {
+	const char *text[8];
+	a[1] = "Press Key 0 to begin";
+	a[2] = "Please enter the x coordinates for your battleship (1x4)";
+	a[3] = "Please enter the y coordinates for your battleship (1x4)";
+	a[4] = "Please enter the x coordinates for your submarine (1x3)";
+	a[5] = "Please enter the y coordinates for your submarine (1x3)";
+	a[6] = "Please enter the x coordinates for your destroyer (1x2)";
+	a[7] = "Please enter the y coordinates for your destroyer (1x2)";
+	a[8] = "Victory!";
+	a[9] = "You were defeated";
+	
+	// VGA character buffer
+    volatile char * character_buffer = (char *) (0x09000000 + (y<<7) + x);
+	*character_buffer = text[state];
 }

@@ -1,3 +1,7 @@
+November 24, 2015
+-Steven: Added switch/button input support
+-Steven: Added a function to output text into the VGA's character buffer
+
 November 17, 2015
 -Steven&Yuchen: Made the VGA subroutines/functions work with a timer interrupt
 -Steven: Began working on the fillRectangle function
