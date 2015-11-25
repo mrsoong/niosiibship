@@ -39,7 +39,7 @@ fillpixel:
 									#be set to the base address
 	add r8, r8, r4					#Add the x-coordinate to the address
 	add r8, r8, r5					#Add the y-coordinate to the address
-	stw r6, 0(r8)				#Write color values into the pixel address
+	sth r6, 0(r8)				#Write color values into the pixel address
 	br succeeded	
 	
 invalid:

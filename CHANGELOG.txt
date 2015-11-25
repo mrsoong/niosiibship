@@ -1,4 +1,6 @@
 November 24, 2015
+-Steven: Got rid of bugs with switch/button input support
+-Yuchen: Added AI functionality to the game (not fully implemented)
 -Steven: Added switch/button input support
 -Steven: Added a function to output text into the VGA's character buffer
 

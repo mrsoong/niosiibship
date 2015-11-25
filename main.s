@@ -1,6 +1,12 @@
 /* Main subroutine for the battleship project
  * Note: Starting address of main should be set to 0x1000,
- * to avoid conflicts with the interrupt
+ * to avoid conflicts with the interrupt subroutine
+ *
+ * Grids: A black square in your grid indicates that a ship is currently occuping that square
+ *        A red square indicates that a part of a ship thats currently occupying
+ *        that square has been hit
+ *        A white square indicates that a shell has been fired at that square, without 
+ *		  hitting any ships
  */
  
 /* Constants */
@@ -44,68 +50,52 @@ TIMER:
 		stw r3, 88(sp)
 		stw r2, 92(sp)
 		
-		movia r10, 1
+		movi r10, 1
 		beq r8, r10, MENU
 		
+		movi r10, 2
+		bge r8, r10, CHECKINPUT2
+		br CHECKINPUTDONE
+CHECKINPUT2: 
+		movi r10, 7
+		ble r8, r10, PLACESHIPS
+CHECKINPUTDONE:
+		movi r10, 8
+		beq r8, r10, ATTACK
+		movi r10, 9
+		beq r8, r10, ATTACK
+		movi r10, 10
+		bge r8, r10, ENDSCREEN
+		
 MENU:
-		call fillBackground
 		call drawGrids
-		movi r4, 70
-		movi r5, 150
+		movi r4, 15
+		movi r5, 40
 		ldw r6, 60(sp)
 		call printText
 		br CLEANUP
 		
-4XINPUT:
-		call fillBackground
+PLACESHIPS:
 		call drawGrids
-		movi r4, 70
-		movi r5, 150
+		movi r4, 15
+		movi r5, 40
 		ldw r6, 60(sp)
 		call printText
-		br CLEANUP
+		br CLEANUP		
 		
-4YINPUT:
-		call fillBackground
+ATTACK:
 		call drawGrids
-		movi r4, 70
-		movi r5, 150
+		#call colorGrid
+		movi r4, 15
+		movi r5, 40
 		ldw r6, 60(sp)
 		call printText
-		br CLEANUP
-		
-3XINPUT:
-		call fillBackground
-		call drawGrids
-		movi r4, 70
-		movi r5, 150
-		ldw r6, 60(sp)
-		call printText
-		br CLEANUP
-		
-3YINPUT:
-		call fillBackground
-		call drawGrids
-		movi r4, 70
-		movi r5, 150
-		ldw r6, 60(sp)
-		call printText
-		br CLEANUP
+		br CLEANUP			
 
-2XINPUT:
-		call fillBackground
+ENDSCREEN:
 		call drawGrids
-		movi r4, 70
-		movi r5, 150
-		ldw r6, 60(sp)
-		call printText
-		br CLEANUP
-		
-2YINPUT:
-		call fillBackground
-		call drawGrids
-		movi r4, 70
-		movi r5, 150
+		movi r4, 15
+		movi r5, 40
 		ldw r6, 60(sp)
 		call printText
 		br CLEANUP
@@ -144,6 +134,9 @@ EXIT_IHANDLER:
 
 .global main
 main:
+	call initializeSquares
+	call fillBackground
+
 	movia sp, 0x3B9ACA00	/* Stack starts from the 1000^3th byte (very high up in memory) */
 	
 	movia r12, ADDR_TIMER
@@ -168,21 +161,25 @@ main:
 							   5 - Waiting for y coordinate of the 1x3 cruiser
 							   6 - Waiting for x coordinate of the 1x2 destroyer
 							   7 - Waiting for y coordinate of the 1x2 destroyer
-							   8 - Victory screen
-							   9 - Game over/Defeat screen
+							   8 - Waiting for the user to input the x coordinate of a cell to attack
+							   9 - Waiting for the user to input the y coordinate of a cell to attack
+							   10 - Victory screen
+							   11 - Game over/Defeat screen
+							   
 							 */
 	movi r9, 0b0			#Current state of push button KEY[1]
 	movi r10, 0				#Current state of the (slider) switches
-	movi r14, 9				#Highest state # in the game
+	movi r14, 11			#Highest state # in the game
 							 
-inputLoop:
+inputLoop: 
 	movia r15, ADDR_PUSHBUTTONS
-	ldwio r11, 0(r15)		#Read in buttons - active low */
+	ldwio r11, 0(r15)		#Read in buttons - active high */
 	andi r13, r11, 0b10
 	mov r11, r0
 	movia r12, 0x989680		#Number of clock cycles that need to pass for 
 							#the input to stabilize (used for debouncing later)
 	bgt r13, r0, debounce
+	br inputLoop
 buttonPressed:
 	#Process the switch input
 	movia r15, ADDR_SLIDESWITCHES
