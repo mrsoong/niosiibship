@@ -1,3 +1,6 @@
+November 26, 2016
+-Steven: Slider input should be working now
+
 November 24, 2015
 -Steven: Got rid of bugs with switch/button input support
 -Yuchen: Added AI functionality to the game (not fully implemented)

@@ -1,5 +1,6 @@
 /* This file includes functions that are used to output primitives,
  * texts and complex structures to the VGA adapter
+ * Also includes various functions used for the game
  * A Bresenham's line algorithm based off the pseudocode 
  * on https://en.wikipedia.org/wiki/Bresenham's_line_algorithm
  * is used to implement the drawLine function
@@ -23,14 +24,66 @@ int square[2][8][8];	/* There a two 8x8 grids that will be displayed
 						   A value of 4 indicates that the square is occupied 
 						   and has been hit
 						 */
+short squareRGB[5]={0, 0b11111, 0, 0xFFFF, 0xF800};
+long inputs[12];		// Not all of the inputs are used by the program
+
+int processInput (int input, int state) {
+	/* Various states in the game (can also be found in main.s)
+							   1 - Start screen
+							   2 - Waiting for x coordinate of the 1x4 battleship
+							   3 - Waiting for y coordinate of the 1x4 battleship
+							   4 - Waiting for x coordinate of the 1x3 cruiser
+							   5 - Waiting for y coordinate of the 1x3 cruiser
+							   6 - Waiting for x coordinate of the 1x2 destroyer
+							   7 - Waiting for y coordinate of the 1x2 destroyer
+							   8 - Waiting for the user to input the x coordinate of a cell to attack
+							   9 - Waiting for the user to input the y coordinate of a cell to attack
+							   10 - Victory screen
+							   11 - Game over/Defeat screen
+							   
+	*/
+	int x, y;
+	if (state > 1) {
+		// Store the slider input that was given by the user
+		inputs[state] = log((double) input) / log (2);
+		// Check to see if the input was faulty (e.g maybe the user flipped two switches by accident)
+		if (inputs[state] % 1) > 0)	// If more than one switch was flipped on (i.e input[state] is not a power of 2)
+			return -1;
+		
+		switch (state) {
+			case 3:
+				// Place the battleship onto the grid/screen
+				y = inputs[3];
+				for (x = inputs[2]; x < inputs[2] + 4; x++) {
+					square[0][x][y] = 2;
+				}
+			case 5:
+				// Place the battleship onto the grid/screen
+				y = inputs[5];
+				for (x = inputs[4]; x < inputs[2] + 3; x++) {
+					square[0][x][y] = 2;
+				}
+			case 7:
+				// Place the battleship onto the grid/screen
+				y = inputs[7];
+				for (x = inputs[6]; x < inputs[2] + 2; x++) {
+					square[0][x][y] = 2;
+				}
+			default:
+				// Do nothing
+		}
+	}
+	return 0;
+}
 						   
 void initializeSquares () {
 	int x;
 	int y = 0;
 	for (x = 0; x < 8; x++) {
+		square[0][x][y] = 1;
 		square[1][x][y] = 1;
-		square[2][x][y] = 1;
 	}
+	inputs[12] = { 0 };
 }
 
 /*
@@ -111,7 +164,18 @@ void colorGrid (int grid1x, int grid1y, int grid2x, int grid2y) {
 	int row, column, x, y;
 	for (row = 0; row < 8; row++) {
 		for (column = 0; column < 8; column++) {
-			
+			// Draw vertical lines to fill each of the squares in the displayed grids
+			y = grid1y + (10 * row) + 1;
+			for (x = grid1x + (10 * column) + 1; x < (grid1x + (10 * column) + 10) {
+				drawLine(x, y, x, y + 9, squareRGB[square[0][row][column]]);
+			}
+			y = grid2y + (10 * row) + 1;
+			for (x = grid2x + (10 * column) + 1; x < (grid2x + (10 * column) + 10) {
+				if (square[1][row][column] == 2)
+					drawLine(x, y, x, y + 9, 0b11111);	// Don't show the opponent's ships until they have been hit
+				else
+					drawLine(x, y, x, y + 9, squareRGB[square[1][row][column]]);
+			}
 		}
 	}
 }

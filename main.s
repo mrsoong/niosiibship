@@ -1,4 +1,8 @@
-/* Main subroutine for the battleship project
+/* Main subroutine for a simplified battleship game
+ * The player is able to place ships (horizontally) on an 8x8 grid displayed
+ * on the screen, and battle it out against an AI controlled opponent. 
+ * 
+ *
  * Note: Starting address of main should be set to 0x1000,
  * to avoid conflicts with the interrupt subroutine
  *
@@ -181,9 +185,13 @@ inputLoop:
 	bgt r13, r0, debounce
 	br inputLoop
 buttonPressed:
-	#Process the switch input
 	movia r15, ADDR_SLIDESWITCHES
 	ldwio r10, 0(r15)		#Read (slider) switches
+	mov r4, r10
+	mov r5, r8
+	movi r15, 1
+	bgt r8, r15, processInput 	#Process the switch input
+	
 	addi r8, r8, 1
 	bgt r8, r14, resetState
 	br inputLoop
