@@ -191,7 +191,14 @@ buttonPressed:
 	mov r5, r8
 	movi r15, 1
 	bgt r8, r15, processInput 	#Process the switch input
+	movi r15, 9
+	bne r8, r15, incrementState	
+continueWait:
+	#Have to be careful to not always go straight to the input screen whenever the user inputs a coordinate
+	movi r8, 8
+	br inputLoop
 	
+incrementState:
 	addi r8, r8, 1
 	bgt r8, r14, resetState
 	br inputLoop
