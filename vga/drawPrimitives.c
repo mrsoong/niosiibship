@@ -15,7 +15,7 @@ void drawVerticalLine (int x0, int y0, int x1, int y1, short color);
 
 // Global variables
 int square[2][8][8];	/* There a two 8x8 grids that will be displayed
-						   one belongs to the player and the other belongs
+						   the first one belongs to the player and the other belongs
 						   to the AI controlled opponent
 						   A value of 1 indicates that the square is empty/unoccupied
 						   A value of 2 indicates that the square is occupied
@@ -90,15 +90,25 @@ int checkVictoryConditions () {
 	int squaresToBeHit = 9;	// 9 squares in the 8x8 need to
 							// to be hit in order for either 
 							// the AI or the player to win the game
+	int hitCounter[2] = {0, 0};
 	int i, x, y;					
 	for (i = 0; i < 2; i++) {
 		for (x = 0; x < 8; x++) {
 			for (y = 0; y < 8; y++) {
-				
+				if (square[i][x][y] == 4) {
+					hitCounter[i] += 1;
+				}
 			}
 		}
 	}
-	
+	if (hitCounter[0] == squaresToBeHit)
+		// All of the player's ships have been hit, 
+		return 2;					
+	else if (hitCounter[1] == squaresToBeHit)
+		// All of the AI's ships have been hit
+		return 1;
+	else 
+		return 0;
 }
 						   
 void initializeSquares () {

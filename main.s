@@ -207,14 +207,20 @@ buttonPressed:
 checkForPlayerVictory:
 	# Check to see if the player has destroyed all of the opponent's ships
 	call checkVictoryConditions
-	movi r15, 11
-	bge r8, r15, inputLoop	#If the game has just been won/lost, then wait for more input
+	movi r15, 1
+	beq r2, r15, victory	#The player has won
+	movi r15, 2
+	beq r2, r15, victory	#The AI has won
+	br inputLoop			#If the game is still ongoing, then wait for more input
 AIAttack:
 	#call C function to determine the AI's actions
 	call checkVictoryConditions
-	movi r15, 11
-	bge r8, r15, inputLoop	#If the game has just been won/lost, then wait for more input
-	movi r8, 8				#Otherwise, continue retrieving coordinates to attack 
+	movi r15, 1
+	beq r2, r15, victory	#The player has won
+	movi r15, 2
+	beq r2, r15, victory	#The AI has won
+	movi r8, 8				
+	br inputLoop			#If the game is still ongoing, then continue retrieving coordinates to attack 
 	
 incrementState:
 	addi r8, r8, 1
@@ -234,7 +240,7 @@ resetState:
 	
 victory:
 	movi r8, 11
-	ret
+	br inputLoop
 	
 defeat:
 	movi r8, 12
