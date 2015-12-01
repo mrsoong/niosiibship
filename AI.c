@@ -13,6 +13,7 @@ int grid[GRID_SIZE][GRID_SIZE];
 int previous[2];
 int hit_prev = NOT_HIT;
 
+//Initiallizes the map grid the AI uses.
 void init_grid(){
 	int i;
 	for (i = 0; i < GRID_SIZE; i++) {
@@ -23,6 +24,7 @@ void init_grid(){
 	}
 }
 
+//Checks if ship exists on the given coordinate.
 int check_hit(int x, int y) {
 	if (square[0][x][y] == 2) {
 		square[0][x][y] = 4;
@@ -31,6 +33,7 @@ int check_hit(int x, int y) {
 	return NOT_HIT;
 }
 
+//Checks if the AI already tried shooting at a coordinate.
 int check_coord(int x, int y) {
 	if (grid[x][y] == HIT) {
 		return 0;
@@ -45,6 +48,7 @@ int getidx() {
 	return rand() % 8;
 }
 
+//Chose random square and return its coordinates if its valid.
 int *chose_rand_square() {
 	int valid = 0;
 	int x;
@@ -68,7 +72,7 @@ int *chose_square() {
 	int y;
 	int valid = 0;
 	static int result[2];
-	int temp_result[2];
+	int *temp_result;
 
 	if (hit_prev) {
 		while (valid != 0) {
@@ -80,21 +84,21 @@ int *chose_square() {
 				case 0:
 					x = previous[GRID_X];
 					y = previous[GRID_Y] - 1;
-					if (previous[GRID_Y] != MIN_IDX) & check_coord(x, y)) {
+					if ((previous[GRID_Y] != MIN_IDX) & check_coord(x, y)) {
 						break;
 					}
 				//Left of the previous square.
 				case 1:
 					x = previous[GRID_X] - 1;
 					y = previous[GRID_Y];
-					if (previous[GRID_X] != MIN_IDX & check_coord(x, y)) {
+					if ((previous[GRID_X] != MIN_IDX) & check_coord(x, y)) {
 						break;
 					}
 				//Below the previous square.
 				case 2:
 					x = previous[GRID_X];
 					y = previous[GRID_Y] + 1;
-					if (previous[GRID_Y] != MAX_IDX & check_coord(x, y)) {
+					if ((previous[GRID_Y] != MAX_IDX) & check_coord(x, y)) {
 						
 						break;
 					}
@@ -102,7 +106,7 @@ int *chose_square() {
 				case 3:
 					x = previous[GRID_X] + 1;
 					y = previous[GRID_Y];
-					if (previous[GRID_X] != MAX_IDX & check_coord(x, y)) {
+					if ((previous[GRID_X] != MAX_IDX) & check_coord(x, y)) {
 						break;
 					}
 				//If it's never valid.
