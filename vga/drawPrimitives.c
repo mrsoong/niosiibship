@@ -38,8 +38,9 @@ int processInput (int input, int state) {
 							   7 - Waiting for y coordinate of the 1x2 destroyer
 							   8 - Waiting for the user to input the x coordinate of a cell to attack
 							   9 - Waiting for the user to input the y coordinate of a cell to attack
-							   10 - Victory screen
-							   11 - Game over/Defeat screen
+							   10 - Waiting for the AI opponent to make a decision
+							   11 - Victory screen
+							   12 - Game over/Defeat screen
 							   
 	*/
 	int x, y;
@@ -74,6 +75,30 @@ int processInput (int input, int state) {
 		}
 	}
 	return 0;
+}
+
+/* 
+ * Checks to see if the player or the opponent has just won
+ * the game. 
+ * Expect this to be called whenever the player or the AI
+ * opponent launches an attack
+ * Returns 0 iff neither the player or the AI has won
+ * Returns 1 iff the player has won
+ * Returns 2 iff the AI opponent has won
+ */
+int checkVictoryConditions () {
+	int squaresToBeHit = 9;	// 9 squares in the 8x8 need to
+							// to be hit in order for either 
+							// the AI or the player to win the game
+	int i, x, y;					
+	for (i = 0; i < 2; i++) {
+		for (x = 0; x < 8; x++) {
+			for (y = 0; y < 8; y++) {
+				
+			}
+		}
+	}
+	
 }
 						   
 void initializeSquares () {

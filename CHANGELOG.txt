@@ -1,3 +1,6 @@
+November 30, 2016
+-Steven: Wrote some more code related to game logic
+
 November 26, 2016
 -Steven: Slider input should be working now
 

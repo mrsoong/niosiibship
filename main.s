@@ -68,8 +68,10 @@ CHECKINPUTDONE:
 		beq r8, r10, ATTACK
 		movi r10, 9
 		beq r8, r10, ATTACK
-		movi r10, 10
-		bge r8, r10, ENDSCREEN
+		movi r10, 11
+		bge r8, r10, VICTORYSCREEN
+		movi r10, 12
+		bge r8, r10, DEFEATSCREEN
 		
 MENU:
 		call drawGrids
@@ -96,7 +98,15 @@ ATTACK:
 		call printText
 		br CLEANUP			
 
-ENDSCREEN:
+VICTORYSCREEN:
+		call drawGrids
+		movi r4, 15
+		movi r5, 40
+		ldw r6, 60(sp)
+		call printText
+		br CLEANUP
+		
+VICTORYSCREEN:
 		call drawGrids
 		movi r4, 15
 		movi r5, 40
@@ -167,13 +177,14 @@ main:
 							   7 - Waiting for y coordinate of the 1x2 destroyer
 							   8 - Waiting for the user to input the x coordinate of a cell to attack
 							   9 - Waiting for the user to input the y coordinate of a cell to attack
-							   10 - Victory screen
-							   11 - Game over/Defeat screen
+							   10 - Waiting for the AI opponent to make a decision
+							   11 - Victory screen
+							   12 - Game over/Defeat screen
 							   
 							 */
 	movi r9, 0b0			#Current state of push button KEY[1]
 	movi r10, 0				#Current state of the (slider) switches
-	movi r14, 11			#Highest state # in the game
+	movi r14, 12			#Highest state # in the game
 							 
 inputLoop: 
 	movia r15, ADDR_PUSHBUTTONS
@@ -191,12 +202,19 @@ buttonPressed:
 	mov r5, r8
 	movi r15, 1
 	bgt r8, r15, processInput 	#Process the switch input
-	movi r15, 9
+	movi r15, 10
 	bne r8, r15, incrementState	
-continueWait:
-	#Have to be careful to not always go straight to the input screen whenever the user inputs a coordinate
-	movi r8, 8
-	br inputLoop
+checkForPlayerVictory:
+	# Check to see if the player has destroyed all of the opponent's ships
+	call checkVictoryConditions
+	movi r15, 11
+	bge r8, r15, inputLoop	#If the game has just been won/lost, then wait for more input
+AIAttack:
+	#call C function to determine the AI's actions
+	call checkVictoryConditions
+	movi r15, 11
+	bge r8, r15, inputLoop	#If the game has just been won/lost, then wait for more input
+	movi r8, 8				#Otherwise, continue retrieving coordinates to attack 
 	
 incrementState:
 	addi r8, r8, 1
@@ -213,6 +231,14 @@ debounce:
 resetState:
 	movi r8, 1
 	br inputLoop
+	
+victory:
+	movi r8, 11
+	ret
+	
+defeat:
+	movi r8, 12
+	ret
 	
 fillBackground:
 	addi sp, sp, -6		# Make the background blue
