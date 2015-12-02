@@ -1,3 +1,6 @@
+December 02, 2015
+-Steven: Added code to enable audio support
+
 November 31, 2015
 -Steven: Added more code related to game logic
 
