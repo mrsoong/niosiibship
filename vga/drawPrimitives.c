@@ -158,10 +158,13 @@ int checkVictoryConditions () {
 		return 0;
 }
 
-void registerHits() {
+int registerHits() {
 	// If the square that the user attacked is occupied (and has not been hit yet), then mark it as destroyed/hit
-	if (square[1][inputs[8]][inputs[9]] == 2)
+	if (square[1][inputs[8]][inputs[9]] == 2) {
 		square[1][inputs[8]][inputs[9]] = 4;
+		return 1;
+	}
+	return 0;
 }
 						   
 void initializeSquares () {

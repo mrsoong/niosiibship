@@ -17,6 +17,7 @@
 .equ ADDR_TIMER, 0xFF202000 
 .equ ADDR_SLIDESWITCHES, 0xFF200040
 .equ ADDR_PUSHBUTTONS, 0xFF200050
+.equ ADDR_AUDIODACFIFO, 0xFF203040	/* Base address of the audio core */
 
 /* Interrupt Handler */
 .section .exceptions, "ax"
@@ -24,7 +25,11 @@ IHANDLER:
 		rdctl et, ctl4           # check for hardware interrupt
 		andi   et,et,0b1         # check if interrupt pending from IRQ0 (timer line)
 										# (ctl4:bit0)
-		bgt    et,r0,TIMER    # if an interrupt is pending from IRQ0, goto TIMER		
+		bgt    et,r0,TIMER    # if an interrupt is pending from IRQ0, goto TIMER	
+		rdctl et, ctl4           # check for hardware interrupt
+		andi   et,et,0b1000000         # check if interrupt pending from IRQ6 (audio line)
+										# (ctl4:bit6)
+		beq et, r0, AUDIO
 		
 TIMER:
 		movia r9, ADDR_TIMER
@@ -151,6 +156,35 @@ CLEANUP:
 		addi sp, sp, 96
 		stwio r0, 0(r9)			#Acknowledge the interrupt
 
+AUDIO:
+	movi r20, 0			#Used to store audio samples for the hit sound
+	movi r21, 0			#Used to store audio samples for the splash sound
+	
+LEFT_SAMPLE:
+	movia r22, HIT_SOUND
+	sub r15, r16, r18
+	bne r15, r22, retrieveHitLeftSample
+LEFT_SAMPLE_CONTINUED:
+	movia r22, SPLASH_SOUND
+	sub r15, r17, r19
+	bne r15, r22, retrieveSplashLeftSample
+ADD_LEFT_SAMPLES:
+	movia r22, ADDR_AUDIODACFIFO
+	add r15, r20, r21
+	stwio r15, 8(r22)
+RIGHT_SAMPLE:
+	movia r22, HIT_SOUND
+	sub r15, r16, r18
+	br retrieveHitRightSample
+RIGHT_SAMPLE_CONTINUED:
+	movia r22, SPLASH_SOUND
+	sub r15, r17, r19
+	br retrieveSplashRightSample
+ADD_RIGHT_SAMPLES:
+	movia r22, ADDR_AUDIODACFIFO
+	add r15, r20, r21
+	stwio r15, 12(r22)
+		
 EXIT_IHANDLER:
 		subi ea,ea,4    # Replay inst that got interrupted 
 		eret
@@ -189,7 +223,6 @@ main:
 							   10 - Waiting for the AI opponent to make a decision
 							   11 - Victory screen
 							   12 - Game over/Defeat screen
-							   
 							 */
 	movi r9, 0b0			#Current state of push button KEY[1]
 	movi r10, 0				#Current state of the (slider) switches
@@ -222,6 +255,9 @@ checkForPlayerVictory:
 	stw r12, 4(sp)
 	stw r8, 8(sp)
 	call registerHits
+	beq r2, r0, playMissSound
+	movi r15, 1
+	beq r2, r15, playHitSound
 	# Check to see if the player has destroyed all of the opponent's ships
 	call checkVictoryConditions
 	ldw r14, 0(sp)
@@ -231,14 +267,15 @@ checkForPlayerVictory:
 	movi r15, 1
 	beq r2, r15, victory	#The player has won
 	movi r15, 2
-	beq r2, r15, victory	#The AI has won
+	beq r2, r15, defeat	#The AI has won
 	br inputLoop			#If the game is still ongoing, then wait for more input
 AIAttack:
-	#call C function to determine the AI's actions
+	#call a C function to determine the AI's actions
 	addi sp, sp, -12
 	stw r14, 0(sp)
 	stw r12, 4(sp)
 	stw r8, 8(sp)
+	# Check to see if the AI has destroyed all of the player's ships
 	call checkVictoryConditions
 	ldw r14, 0(sp)
 	ldw r12, 4(sp)
@@ -247,7 +284,7 @@ AIAttack:
 	movi r15, 1
 	beq r2, r15, victory	#The player has won
 	movi r15, 2
-	beq r2, r15, victory	#The AI has won
+	beq r2, r15, defeat	#The AI has won
 	movi r8, 8				
 	br inputLoop			#If the game is still ongoing, then continue retrieving coordinates to attack 
 	
@@ -279,7 +316,46 @@ invalidInput:
 	subi r8, r8, 1
 	br inputLoop
 	
+playHitSound:
+	movi r15, 0b10				
+	movia r16, ADDR_AUDIODACFIFO
+	stw r15, 0(r16)				/* Enable interrupts on the audio codec device*/
+	movi r15, 0b1000001
+	wrctl ctl3, r15				/* Enable the correct IRQ lines in ienable */
+	movia r16, HIT_SOUND /* The audio core should play a splash sound */
+	movia r18, xxxx		/* The spash sound contains xxxx samples */
+	
+playSplashSound:
+	movi r15, 0b10				
+	movia r16, ADDR_AUDIODACFIFO
+	stw r15, 0(r16)				/* Enable interrupts on the audio codec device*/
+	movi r15, 0b1000001
+	wrctl ctl3, r15				/* Enable the correct IRQ lines in ienable */
+	movia r17, SPLASH_SOUND /* The audio core should play a splash sound */
+	movia r19, xxxx		/* The hit sound contains xxxx samples */
+	
+retrieveHitLeftSample:
+	ldw r20, 0(r16)
+	addi r16, r16, 4
+	br LEFT_SAMPLE_CONTINUED
+	
+retrieveSplashLeftSample:
+	ldw r21, 0(r17)
+	addi r17, r17, 4
+	br ADD_LEFT_SAMPLES
+	
+retrieveHitRightSample:
+	ldw r20, 0(r16)
+	addi r16, r16, 4
+	br RIGHT_SAMPLE_CONTINUED
+	
+retrieveSplashRightSample:
+	ldw r21, 0(r17)
+	addi r17, r17, 4
+	br ADD_RIGHT_SAMPLES
+	
 resetState:
+	movi r8, 1
 	br main
 	
 victory:
