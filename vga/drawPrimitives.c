@@ -25,7 +25,8 @@ int square[2][8][8];	/* There a two 8x8 grids that will be displayed
 						   and has been hit
 						 */
 short squareRGB[5]={0, 0b11111, 0, 0xFFFF, 0xF800};
-long inputs[12];		// Not all of the inputs are used by the program
+long inputs[13];		// Not all of the inputs are used by the program
+int invalidInput = 0;
 
 int processInput (int input, int state) {
 	/* Various states in the game (can also be found in main.s)
@@ -43,35 +44,81 @@ int processInput (int input, int state) {
 							   12 - Game over/Defeat screen
 							   
 	*/
-	int x, y;
+	int x, y, i;
+	double temp;
+	int active_switches = 0;
 	if (state > 1) {
 		// Store the slider input that was given by the user
-		inputs[state] = log((double) input) / log (2);
-		// Check to see if the input was faulty (e.g maybe the user flipped two switches by accident)
-		if (inputs[state] % 1) > 0)	// If more than one switch was flipped on (i.e input[state] is not a power of 2)
+		// If the user flipped just one switch, then the number of active bits should be equal to just 1
+		for (i = 0; i < 10; i++) {
+			if (input & (1 << i)) {
+				inputs [state] += i;
+				active_switches++;
+			}
+		}
+		if ((active_switches == 0) || (active_switches > 1)) {
+			invalidInput = 1;
 			return -1;
+		}
 		
 		switch (state) {
 			case 3:
 				// Place the battleship onto the grid/screen
+				
+				if ((inputs[2] + 4) > 7)
+					invalidInput = 1;
+				if (invalidInput == 1) {
+					return -1;
+				}
 				y = inputs[3];
 				for (x = inputs[2]; x < inputs[2] + 4; x++) {
 					square[0][x][y] = 2;
 				}
+				break;
 			case 5:
 				// Place the battleship onto the grid/screen
+				
+				// Check to see if the ship that the user wants to place
+				// overlaps with an existing ship
+				for (x = inputs[4]; x < inputs[4] + 3; x++) {
+					if (square[0][x][inputs[5]] == 2) {
+						// The cruiser overlaps with another ship
+						invalidInput = 1;
+					}
+				}
+				if ((inputs[4] + 3) > 7)
+					invalidInput = 1;
+				if (invalidInput == 1) {
+					return -1;
+				}
 				y = inputs[5];
-				for (x = inputs[4]; x < inputs[2] + 3; x++) {
+				for (x = inputs[4]; x < inputs[4] + 3; x++) {
 					square[0][x][y] = 2;
 				}
+				invalidInput = 0;
+				break;
 			case 7:
 				// Place the battleship onto the grid/screen
+				
+				// Check to see if the ship that the user wants to place
+				// overlaps with an existing ship
+				for (x = inputs[6]; x < inputs[6] + 2; x++) {
+					if (square[0][x][inputs[7]] == 2) {
+						// The cruiser overlaps with another ship
+						invalidInput = 1;
+					}
+				}
+				if ((inputs[6] + 2) > 7)
+					invalidInput = 1;
+				if (invalidInput == 1) {
+					return -1;
+				}
 				y = inputs[7];
-				for (x = inputs[6]; x < inputs[2] + 2; x++) {
+				for (x = inputs[6]; x < inputs[6] + 2; x++) {
 					square[0][x][y] = 2;
 				}
-			default:
-				// Do nothing
+				invalidInput = 0;
+				break;
 		}
 	}
 	return 0;
@@ -110,15 +157,24 @@ int checkVictoryConditions () {
 	else 
 		return 0;
 }
+
+void registerHits() {
+	// If the square that the user attacked is occupied (and has not been hit yet), then mark it as destroyed/hit
+	if (square[1][inputs[8]][inputs[9]] == 2)
+		square[1][inputs[8]][inputs[9]] = 4;
+}
 						   
 void initializeSquares () {
-	int x;
-	int y = 0;
+	int x, y;
 	for (x = 0; x < 8; x++) {
-		square[0][x][y] = 1;
-		square[1][x][y] = 1;
+		for (y = 0; y < 8; y++) {
+			square[0][x][y] = 1;
+			square[1][x][y] = 1;
+		}
 	}
-	inputs[12] = { 0 };
+	for (y = 0; y < 12; y++) {
+		inputs[y] = 0;
+	}
 }
 
 /*
@@ -201,15 +257,15 @@ void colorGrid (int grid1x, int grid1y, int grid2x, int grid2y) {
 		for (column = 0; column < 8; column++) {
 			// Draw vertical lines to fill each of the squares in the displayed grids
 			y = grid1y + (10 * row) + 1;
-			for (x = grid1x + (10 * column) + 1; x < (grid1x + (10 * column) + 10) {
-				drawLine(x, y, x, y + 9, squareRGB[square[0][row][column]]);
+			for (x = grid1x + (10 * column) + 1; x < (grid1x + (10 * column)) + 10; x++) {
+				drawLine(x, y, x, y + 8, squareRGB[square[0][column][row]]);
 			}
 			y = grid2y + (10 * row) + 1;
-			for (x = grid2x + (10 * column) + 1; x < (grid2x + (10 * column) + 10) {
+			for (x = grid2x + (10 * column) + 1; x < (grid2x + (10 * column) + 10); x++) {
 				if (square[1][row][column] == 2)
-					drawLine(x, y, x, y + 9, 0b11111);	// Don't show the opponent's ships until they have been hit
+					drawLine(x, y, x, y + 8, 0b11111);	// Don't show the opponent's ships until they have been hit
 				else
-					drawLine(x, y, x, y + 9, squareRGB[square[1][row][column]]);
+					drawLine(x, y, x, y + 8, squareRGB[square[1][column][row]]);
 			}
 		}
 	}
@@ -239,6 +295,7 @@ void printText (int x, int y, int state) {
 	char *blank = " ";
 	for (i = 0; i < 80; i++) {
 		write_char(i, y, *blank);
+		write_char(i, y + 1, *blank);
 	}
 	
 	char *text[12];
@@ -249,10 +306,12 @@ void printText (int x, int y, int state) {
 	text[5] = "Please enter the y coordinates for your submarine (1x3)";
 	text[6] = "Please enter the x coordinates for your destroyer (1x2)";
 	text[7] = "Please enter the y coordinates for your destroyer (1x2)";
-	text[8] = "It's your turn to attack! Please enter the x coordinate of a square that you wish to strike";
-	text[9] = "It's your turn to attack! Please enter the y coordinate of a square that you wish to strike";
+	text[8] = "Enter a x coordinate to attack!";
+	text[9] = "Enter a y coordinate to attack!";
 	text[10] = "Victory!";
 	text[11] = "You were defeated";
+	
+	char *invalidInputMessage = "The previous (x,y) coordinates inputed were invalid. Please reenter some valid coordinates";
 	
     char *current = text[state];
 	int currentX = x;
@@ -260,5 +319,14 @@ void printText (int x, int y, int state) {
 		write_char(currentX, y, *current);
 		currentX++;
 		current++;
+	}
+	if (invalidInput == 1) {
+		current = invalidInputMessage;
+		currentX = x;
+		while (*current) {
+			write_char(currentX, (y + 1), *current);
+			currentX++;
+			current++;
+		}
 	}
 }

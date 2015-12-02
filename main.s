@@ -83,6 +83,11 @@ MENU:
 		
 PLACESHIPS:
 		call drawGrids
+		movi r4, 50
+		movi r5, 50
+		movi r6, 180
+		movi r7, 50
+		call colorGrid
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
@@ -91,7 +96,11 @@ PLACESHIPS:
 		
 ATTACK:
 		call drawGrids
-		#call colorGrid
+		movi r4, 50
+		movi r5, 50
+		movi r6, 180
+		movi r7, 50
+		call colorGrid
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
@@ -106,7 +115,7 @@ VICTORYSCREEN:
 		call printText
 		br CLEANUP
 		
-VICTORYSCREEN:
+DEFEATSCREEN:
 		call drawGrids
 		movi r4, 15
 		movi r5, 40
@@ -201,12 +210,24 @@ buttonPressed:
 	mov r4, r10
 	mov r5, r8
 	movi r15, 1
-	bgt r8, r15, processInput 	#Process the switch input
+	bgt r8, r15, analyzeInput 	#Process the switch input, in case the user has finished inputing coordinates for one of his/her ships
+inputLoopContinued:
+	movi r15, 11
+	bge r8, r15, resetState
 	movi r15, 10
 	bne r8, r15, incrementState	
 checkForPlayerVictory:
+	addi sp, sp, -12
+	stw r14, 0(sp)
+	stw r12, 4(sp)
+	stw r8, 8(sp)
+	call registerHits
 	# Check to see if the player has destroyed all of the opponent's ships
 	call checkVictoryConditions
+	ldw r14, 0(sp)
+	ldw r12, 4(sp)
+	ldw r8, 8(sp)
+	addi sp, sp, 12
 	movi r15, 1
 	beq r2, r15, victory	#The player has won
 	movi r15, 2
@@ -214,7 +235,15 @@ checkForPlayerVictory:
 	br inputLoop			#If the game is still ongoing, then wait for more input
 AIAttack:
 	#call C function to determine the AI's actions
+	addi sp, sp, -12
+	stw r14, 0(sp)
+	stw r12, 4(sp)
+	stw r8, 8(sp)
 	call checkVictoryConditions
+	ldw r14, 0(sp)
+	ldw r12, 4(sp)
+	ldw r8, 8(sp)
+	addi sp, sp, 12
 	movi r15, 1
 	beq r2, r15, victory	#The player has won
 	movi r15, 2
@@ -234,9 +263,24 @@ debounce:
 	blt r11, r12, debounce
 	br buttonPressed
 	
-resetState:
-	movi r8, 1
+analyzeInput:
+	addi sp, sp, -12
+	stw r14, 0(sp)
+	stw r12, 4(sp)
+	stw r8, 8(sp)
+	call processInput
+	ldw r14, 0(sp)
+	ldw r12, 4(sp)
+	ldw r8, 8(sp)
+	addi sp, sp, 12
+	blt r2, r0, invalidInput
+	br inputLoopContinued
+invalidInput:
+	subi r8, r8, 1
 	br inputLoop
+	
+resetState:
+	br main
 	
 victory:
 	movi r8, 11
@@ -244,7 +288,7 @@ victory:
 	
 defeat:
 	movi r8, 12
-	ret
+	br inputLoop
 	
 fillBackground:
 	addi sp, sp, -6		# Make the background blue
