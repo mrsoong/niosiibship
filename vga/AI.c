@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "ship.h"
 
 #define GRID_X 		0	//Index 0 of "previous" array
 #define GRID_Y 		1	//Index 1 of "previous" array
