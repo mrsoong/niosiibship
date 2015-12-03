@@ -48,16 +48,18 @@ int processInput (int input, int state) {
 	int x, y, i;
 	double temp;
 	int active_switches = 0;
+	invalidInput = 0;
 	if (state > 1) {
 		// Store the slider input that was given by the user
-		// If the user flipped just one switch, then the number of active bits should be equal to just 1
+		// If the user flipped only one switch, then the number of active bits should be equal to just 1
+		inputs[state] = 0;
 		for (i = 0; i < 10; i++) {
 			if (input & (1 << i)) {
 				inputs [state] += i;
 				active_switches++;
 			}
 		}
-		if ((active_switches == 0) || (active_switches > 1)) {
+		if (((active_switches == 0) || (active_switches > 1)) && (state < 10)) {
 			invalidInput = 1;
 			return -1;
 		}
@@ -75,6 +77,7 @@ int processInput (int input, int state) {
 				for (x = inputs[2]; x < inputs[2] + 4; x++) {
 					square[0][x][y] = 2;
 				}
+				invalidInput = 0;
 				break;
 			case 5:
 				// Place the battleship onto the grid/screen
@@ -144,24 +147,26 @@ int checkVictoryConditions () {
 		for (x = 0; x < 8; x++) {
 			for (y = 0; y < 8; y++) {
 				if (square[i][x][y] == 4) {
+					printf("x: %d y: %d hit! \n", inputs[8], inputs[9]);
 					hitCounter[i] += 1;
 				}
 			}
 		}
 	}
-	if (hitCounter[0] == squaresToBeHit)
+	if (hitCounter[0] == squaresToBeHit) {
 		// All of the player's ships have been hit, 
 		return 2;					
-	else if (hitCounter[1] == squaresToBeHit)
+	}
+	if (hitCounter[1] == squaresToBeHit) {
 		// All of the AI's ships have been hit
 		return 1;
-	else 
-		return 0;
+	}
+	return 0;
 }
 
-int registerHits() {
+int registerHits(int state) {
 	// If the square that the user attacked is occupied (and has not been hit yet), then mark it as destroyed/hit
-	if (square[1][inputs[8]][inputs[9]] == 2) {
+	if ((square[1][inputs[8]][inputs[9]] == 2)) {
 		square[1][inputs[8]][inputs[9]] = 4;
 		return 1;
 	}
@@ -173,7 +178,8 @@ void initializeSquares () {
 	for (x = 0; x < 8; x++) {
 		for (y = 0; y < 8; y++) {
 			square[0][x][y] = 1;
-			square[1][x][y] = 1;
+			// square[1][x][y] = 1;
+			square[1][x][y] = 2;
 		}
 	}
 	for (y = 0; y < 12; y++) {
@@ -302,7 +308,7 @@ void printText (int x, int y, int state) {
 		write_char(i, y + 1, *blank);
 	}
 	
-	char *text[12];
+	char *text[13];
 	text[1] = "Press Key 1 to begin";
 	text[2] = "Please enter the x coordinates for your battleship (1x4)";
 	text[3] = "Please enter the y coordinates for your battleship (1x4)";
@@ -312,8 +318,9 @@ void printText (int x, int y, int state) {
 	text[7] = "Please enter the y coordinates for your destroyer (1x2)";
 	text[8] = "Enter a x coordinate to attack!";
 	text[9] = "Enter a y coordinate to attack!";
-	text[10] = "Victory!";
-	text[11] = "You were defeated";
+	text[10] = "Awaiting AI response";
+	text[11] = "Victory!";
+	text[12] = "You were defeated";
 	
 	char *invalidInputMessage = "The previous (x,y) coordinates inputed were invalid. Please reenter some valid coordinates";
 	
