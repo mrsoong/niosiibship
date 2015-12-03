@@ -35,7 +35,7 @@ IHANDLER:
 		rdctl et, ctl4           # check for hardware interrupt
 		andi   et,et,0b1000000         # check if interrupt pending from IRQ6 (audio line)
 										# (ctl4:bit6)
-		beq et, r0, AUDIO
+		bgt et, r0, AUDIO
 		
 TIMER:
 		movia r9, ADDR_TIMER
@@ -162,6 +162,7 @@ CLEANUP:
 		ldw r2, 92(sp)
 		addi sp, sp, 96
 		stwio r0, 0(r9)			#Acknowledge the interrupt
+		br EXIT_IHANDLER
 
 AUDIO:
 	addi sp, sp, -4
@@ -199,10 +200,13 @@ ADD_RIGHT_SAMPLES:
 	
 	ldw r15, 0(sp)
 	addi sp, sp, 4
+	br EXIT_IHANDLER
 
 disableAudioInterrupt:					
 	movia r16, ADDR_AUDIODACFIFO
 	stw r0, 0(r16)
+	ldw r15, 0(sp)
+	addi sp, sp, 4
 		
 EXIT_IHANDLER:
 		subi ea,ea,4    # Replay inst that got interrupted 
@@ -275,11 +279,15 @@ checkForPlayerVictory:
 	stw r8, 8(sp)
 	mov r4, r8
 	call registerHits
-	#beq r2, r0, playSplashSound
+	beq r2, r0, playSplashSound
 	movi r15, 1
-	#beq r2, r15, playHitSound
-	# Check to see if the player has destroyed all of the opponent's ships
+	beq r2, r15, playHitSound
+playSound:
+	movia r15, ADDR_AUDIODACFIFO
+	ldw r23, 0(r15)
+	bne r23, r0, playSound		#Wait for the sound to finish playing before preceding
 victoryConditionCheck:
+	# Check to see if the player has destroyed all of the opponent's ships
 	call checkVictoryConditions
 	ldw r14, 0(sp)
 	ldw r12, 4(sp)
@@ -352,8 +360,9 @@ playHitSound:
 	movi r15, 0b1000001
 	wrctl ctl3, r15				/* Enable the correct IRQ lines in ienable */
 	movia r16, HIT_SOUND /* The audio core should play a splash sound */
-	movia r18, 168939		/* The spash sound contains this many samples */
-	br victoryConditionCheck
+	movia r18, 168939		/* The splash sound contains this many samples */
+	muli r18, r18, 4		/* Each sample takes up 4 bytes in memory */
+	br playSound
 	
 playSplashSound:
 	movi r15, 0b10				
@@ -363,7 +372,8 @@ playSplashSound:
 	wrctl ctl3, r15				/* Enable the correct IRQ lines in ienable */
 	movia r17, SPLASH_SOUND /* The audio core should play a splash sound */
 	movia r19, 106335		/* The hit sound contains this many samples */
-	br victoryConditionCheck
+	muli r19, r19, 4		/* Each sample takes up 4 bytes in memory */
+	br playSound
 	
 retrieveHitLeftSample:
 	ldw r20, 0(r16)
