@@ -9,7 +9,7 @@
  */
 #include <stdio.h>
 #include <math.h>
-//#include 'ship.h'
+#include "ship.h"
 
 // Prototypes
 void drawVerticalLine (int x0, int y0, int x1, int y1, short color);
@@ -25,7 +25,7 @@ int square[2][8][8];	/* There a two 8x8 grids that will be displayed
 						   A value of 4 indicates that the square is occupied 
 						   and has been hit
 						 */
-short squareRGB[5]={0, 0b11111, 0, 0xFFFF, 0xF800};
+short squareRGB[5]={0b11111, 0b11111, 0, 0xFFFF, 0xF800};
 long inputs[13];		// Not all of the inputs are used by the program
 int invalidInput = 0;
 
@@ -166,11 +166,16 @@ int checkVictoryConditions () {
 
 int registerHits(int state) {
 	// If the square that the user attacked is occupied (and has not been hit yet), then mark it as destroyed/hit
-	if ((square[1][inputs[8]][inputs[9]] == 2)) {
+	if (square[1][inputs[8]][inputs[9]] == 2) {
 		square[1][inputs[8]][inputs[9]] = 4;
 		return 1;
 	}
-	return 0;
+	else if (square[1][inputs[8]][inputs[9]] == 1) {
+		square[1][inputs[8]][inputs[9]] = 3;
+		return 0;
+	}
+	else
+		return -1;
 }
 						   
 void initializeSquares () {
@@ -178,8 +183,8 @@ void initializeSquares () {
 	for (x = 0; x < 8; x++) {
 		for (y = 0; y < 8; y++) {
 			square[0][x][y] = 1;
-			// square[1][x][y] = 1;
-			square[1][x][y] = 2;
+			square[1][x][y] = 1;
+			// square[1][x][y] = 2;
 		}
 	}
 	for (y = 0; y < 12; y++) {
@@ -272,10 +277,11 @@ void colorGrid (int grid1x, int grid1y, int grid2x, int grid2y) {
 			}
 			y = grid2y + (10 * row) + 1;
 			for (x = grid2x + (10 * column) + 1; x < (grid2x + (10 * column) + 10); x++) {
-				if (square[1][row][column] == 2)
+				if (squareRGB[square[1][column][row]] == 0)
 					drawLine(x, y, x, y + 8, 0b11111);	// Don't show the opponent's ships until they have been hit
-				else
+				else {
 					drawLine(x, y, x, y + 8, squareRGB[square[1][column][row]]);
+				}
 			}
 		}
 	}
