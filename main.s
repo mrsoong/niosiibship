@@ -107,6 +107,7 @@ PLACESHIPS:
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
+		#call drawShips
 		call printText
 		br CLEANUP		
 		
@@ -120,6 +121,7 @@ ATTACK:
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
+		#call drawShips
 		call printText
 		br CLEANUP			
 
@@ -128,6 +130,7 @@ VICTORYSCREEN:
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
+		#call drawShips
 		call printText
 		br CLEANUP
 		
@@ -136,6 +139,7 @@ DEFEATSCREEN:
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
+		#call drawShips
 		call printText
 		br CLEANUP
 
@@ -177,19 +181,16 @@ AUDIO:
 LEFT_SAMPLE:
 	movia r22, HIT_SOUND
 	sub r15, r16, r18
-	bge r16, r22, HIT_SOUND_PLAYING
-	br LEFT_SAMPLE_CONTINUED
-HIT_SOUND_PLAYING:
-	blt r15, r22, retrieveHitLeftSample
+	bltu r15, r22, retrieveHitLeftSample
+	mov r16, r0						#If the hit sound has finished playing, then set r16 to zero again to indicate that it has finished playing
 LEFT_SAMPLE_CONTINUED:
 	movia r22, SPLASH_SOUND
 	sub r15, r17, r19
-	bge r17, r22, SPLASH_SOUND_PLAYING
-	br ADD_LEFT_SAMPLES
-SPLASH_SOUND_PLAYING:
-	blt r15, r22, retrieveSplashLeftSample
-	br disableAudioInterrupt
+	bltu r15, r22, retrieveSplashLeftSample
+	mov r17, r0						#If the hit sound has finished playing, then set r16 to zero again to indicate that it has finished playing
 ADD_LEFT_SAMPLES:
+	add r15, r16, r17				#Check to see if any of the two sounds are still playing
+	beq r15, r0, disableAudioInterrupt	#If not, then disable the audio interrupt 
 	movia r22, ADDR_AUDIODACFIFO
 	add r15, r20, r21
 	#sthio r15, 8(r22)
@@ -296,6 +297,10 @@ checkForPlayerVictory:
 	stw r8, 8(sp)
 	mov r4, r8
 	call registerHits
+	br disableTimerInterrupt:
+timerStopped:
+	mov r16, r0
+	mov r17, r0
 	beq r2, r0, playSplashSound
 	movi r15, 1
 	beq r2, r15, playHitSound
@@ -371,14 +376,16 @@ decrementState:
 	subi r8, r8, 1
 	br inputLoop
 	
+disableTimerInterrupt:
+	movia r23, ADDR_TIMER
+	movi r15, 0b1000			/* Stop the timer */
+	stw r15, 4(r23)
+	br timerStopped
+	
 playHitSound:
 	movia r16, HIT_SOUND /* The audio core should play a splash sound */
 	movia r18, 168939		/* The splash sound contains this many samples */
 	muli r18, r18, 2		/* Each sample takes up 4 bytes in memory */
-	
-	movia r23, ADDR_TIMER
-	movi r15, 0b1000			/* Stop the timer */
-	stw r15, 4(r23)
 
 	movi r15, 0b10				
 	movia r23, ADDR_AUDIODACFIFO
@@ -391,10 +398,6 @@ playSplashSound:
 	movia r17, SPLASH_SOUND /* The audio core should play a splash sound */
 	movia r19, 106335		/* The hit sound contains this many samples */
 	muli r19, r19, 2		/* Each sample takes up 4 bytes in memory */
-
-	movia r23, ADDR_TIMER
-	movi r15, 0b1000			/* Stop the timer */
-	stw r15, 4(r23)
 
 	movi r15, 0b10				
 	movia r23, ADDR_AUDIODACFIFO

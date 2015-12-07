@@ -1,15 +1,23 @@
 /* This file includes functions that are used to output primitives,
  * texts and complex structures to the VGA adapter
  * Also includes various functions used for the game
- * A Bresenham's line algorithm based off the pseudocode 
+ * The Bresenham's line algorithm is based off the pseudocode 
  * on https://en.wikipedia.org/wiki/Bresenham's_line_algorithm
- * is used to implement the drawLine function
+ * The functions used to draw triangles are based off of the 
+ * code that can be found on this site:
+ * http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
  *
  * NOTE: Needs the linker flag -lm to work!!!!!!!!!!!!!!!
  */
 #include <stdio.h>
 #include <math.h>
 #include "ship.h"
+
+// Structures
+struct Vertice {
+   float x;
+   float y;
+};
 
 // Prototypes
 void drawVerticalLine (int x0, int y0, int x1, int y1, short color);
@@ -25,6 +33,7 @@ int square[2][8][8];	/* There a two 8x8 grids that will be displayed
 						   A value of 4 indicates that the square is occupied 
 						   and has been hit
 						 */
+int battleshipPos[3][2];	/* Stores the (x,y) starting coordinates of the "battleships" */
 short squareRGB[5]={0b11111, 0b11111, 0, 0xFFFF, 0xF800};
 long inputs[13];		// Not all of the inputs are used by the program
 int invalidInput = 0;
@@ -190,6 +199,10 @@ void initializeSquares () {
 	for (y = 0; y < 12; y++) {
 		inputs[y] = 0;
 	}
+	for (x = 0; x < 3; x++) {
+		battleshipPos[x][0] = -1;
+		battleshipPos[x][1] = -1;
+	}
 }
 
 /*
@@ -292,6 +305,140 @@ void fillRectangle (int x0, int y0, int deltax, int deltay, short color) {
 	int y = y0;
 	for (y = y0; y <= (y0 + deltay - 1); y++) {
 		drawLine (x, y, (x + deltax - 1), y, color);
+	}
+}
+
+void fillBottomFlatTriangle(struct Vertice v1, struct Vertice v2, struct Vertice v3)
+{
+  float invslope1 = (v2.x - v1.x) / (v2.y - v1.y);
+  float invslope2 = (v3.x - v1.x) / (v3.y - v1.y);
+
+  float curx1 = v1.x;
+  float curx2 = v1.x;
+  
+  int scanlineY;
+
+  for (scanlineY = v1.y; scanlineY <= v2.y; scanlineY++)
+  {
+    drawLine((int)curx1, scanlineY, (int)curx2, scanlineY, 0x1544);
+    curx1 += invslope1;
+    curx2 += invslope2;
+  }
+}
+
+void fillTopFlatTriangle(struct Vertice v1, struct Vertice v2, struct Vertice v3)
+{
+  float invslope1 = (v3.x - v1.x) / (v3.y - v1.y);
+  float invslope2 = (v3.x - v2.x) / (v3.y - v2.y);
+
+  float curx1 = v3.x;
+  float curx2 = v3.x;
+  
+  int scanlineY;
+
+  for (int scanlineY = v3.y; scanlineY > v1.y; scanlineY--)
+  {
+    curx1 -= invslope1;
+    curx2 -= invslope2;
+    drawLine((int)curx1, scanlineY, (int)curx2, scanlineY, 0x1544);
+  }
+}
+
+/* Algorithm used to draw a triangle 
+   Note: Only works if v1.y <= v2.y <= v3.y  */
+void drawTriangle(struct Vertice v1, struct Vertice v2, struct Vertice v3)
+{
+  /* here we know that v1.y <= v2.y <= v3.y */
+  /* check for trivial case of bottom-flat triangle */
+  if (v2.y == v3.y)
+  {
+    fillBottomFlatTriangle(v1, v2, v3);
+  }
+  /* check for trivial case of top-flat triangle */
+  else if (vt1.y == vt2.y)
+  {
+    fillTopFlatTriangle(g, vt1, vt2, vt3);
+  }
+  else
+  {
+    /* general case - split the triangle in a topflat and bottom-flat one */
+    Vertice v4 = new Vertice(
+      (int)(vt1.x + ((float)(vt2.y - vt1.y) / (float)(vt3.y - vt1.y)) * (vt3.x - vt1.x)), vt2.y);
+    fillBottomFlatTriangle(g, vt1, vt2, v4);
+    fillTopFlatTriangle(g, vt2, v4, vt3);
+  }
+}
+
+void drawShips() {
+	int i;
+	int firstSquareX, firstSquareY;
+	struct Vertice v1;
+	struct Vertice v2;
+	struct Vertice v3;
+	
+	for (i = 0; i < 3; i++) {
+		if ((battleshipPos[i][0] != -1) && (battleshipPos[i][1] != -1)) {
+			switch (i) {
+				case 0:
+					firstSquareX = battleshipPos[0][0] * 10;
+					firstSquareY = battleshipPos[0][1] * 10;
+					v1.x = firstSquareX + 10;
+					v1.y = firstSquareY + 2;
+					v2.x = firstSquareX + 5;
+					v2.y = firstSquareX + 5;
+					v3.x = firstSquareX + 10;
+					v3.y = firstSquareX + 7;
+					drawTriangle(v1, v2, v3)
+					fillRectangle(firstSquareX + 10, firstSquareY + 2, 10, 5, 0x1544);
+					fillRectangle(firstSquareX + 20, firstSquareY + 2, 10, 5, 0x1544);
+					v1.x = firstSquareX + 30;
+					v1.y = firstSquareY + 2;
+					v2.x = firstSquareX + 35;
+					v2.y = firstSquareX + 5;
+					v3.x = firstSquareX + 30;
+					v3.y = firstSquareX + 7;
+					drawTriangle(v1, v2, v3)
+					break;
+				case 1:
+					firstSquareX = battleshipPos[0][0] * 10;
+					firstSquareY = battleshipPos[0][1] * 10;
+					v1.x = firstSquareX + 10;
+					v1.y = firstSquareY + 2;
+					v2.x = firstSquareX + 5;
+					v2.y = firstSquareX + 5;
+					v3.x = firstSquareX + 10;
+					v3.y = firstSquareX + 7;
+					drawTriangle(v1, v2, v3)
+					fillRectangle(firstSquareX + 10, firstSquareY + 2, 10, 5, 0x1544);
+					v1.x = firstSquareX + 20;
+					v1.y = firstSquareY + 2;
+					v2.x = firstSquareX + 25;
+					v2.y = firstSquareX + 5;
+					v3.x = firstSquareX + 20;
+					v3.y = firstSquareX + 7;
+					drawTriangle(v1, v2, v3)
+					break;
+				case 2:
+					firstSquareX = battleshipPos[0][0] * 10;
+					firstSquareY = battleshipPos[0][1] * 10;
+					v1.x = firstSquareX + 5;
+					v1.y = firstSquareY + 2;
+					v2.x = firstSquareX + 1;
+					v2.y = firstSquareX + 5;
+					v3.x = firstSquareX + 5;
+					v3.y = firstSquareX + 7;
+					drawTriangle(v1, v2, v3)
+					fillRectangle(firstSquareX + 5, firstSquareY + 2, 10, 5, 0x1544);
+					v1.x = firstSquareX + 15;
+					v1.y = firstSquareY + 2;
+					v2.x = firstSquareX + 19;
+					v2.y = firstSquareX + 5;
+					v3.x = firstSquareX + 15;
+					v3.y = firstSquareX + 7;
+					drawTriangle(v1, v2, v3)
+					break;
+			}
+		}
 	}
 }
 
