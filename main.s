@@ -98,48 +98,41 @@ MENU:
 		br CLEANUP
 		
 PLACESHIPS:
-		call drawGrids
-		movi r4, 50
-		movi r5, 50
-		movi r6, 180
-		movi r7, 50
-		call colorGrid
+		call drawShips
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
-		#call drawShips
 		call printText
 		br CLEANUP		
 		
 ATTACK:
-		call drawGrids
 		movi r4, 50
 		movi r5, 50
 		movi r6, 180
 		movi r7, 50
 		call colorGrid
+		#call drawShips
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
-		#call drawShips
 		call printText
 		br CLEANUP			
 
 VICTORYSCREEN:
 		call drawGrids
+		#call drawShips
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
-		#call drawShips
 		call printText
 		br CLEANUP
 		
 DEFEATSCREEN:
 		call drawGrids
+		#call drawShips
 		movi r4, 15
 		movi r5, 40
 		ldw r6, 60(sp)
-		#call drawShips
 		call printText
 		br CLEANUP
 
@@ -187,14 +180,14 @@ LEFT_SAMPLE_CONTINUED:
 	movia r22, SPLASH_SOUND
 	sub r15, r17, r19
 	bltu r15, r22, retrieveSplashLeftSample
-	mov r17, r0						#If the hit sound has finished playing, then set r16 to zero again to indicate that it has finished playing
+	mov r17, r0						#If the hit sound has finished playing, then set r17 to zero again to indicate that it has finished playing
 ADD_LEFT_SAMPLES:
 	add r15, r16, r17				#Check to see if any of the two sounds are still playing
 	beq r15, r0, disableAudioInterrupt	#If not, then disable the audio interrupt 
 	movia r22, ADDR_AUDIODACFIFO
 	add r15, r20, r21
-	#sthio r15, 8(r22)
-	sthio r21, 8(r22)
+	sthio r15, 8(r22)
+	#sthio r21, 8(r22)
 RIGHT_SAMPLE:
 	movia r22, HIT_SOUND
 	sub r15, r16, r18
@@ -206,8 +199,8 @@ RIGHT_SAMPLE_CONTINUED:
 ADD_RIGHT_SAMPLES:
 	movia r22, ADDR_AUDIODACFIFO
 	add r15, r20, r21
-	#sthio r15, 12(r22)
-	sthio r21, 12(r22)
+	sthio r15, 12(r22)
+	#sthio r21, 12(r22)
 	
 	ldw r15, 0(sp)
 	addi sp, sp, 4
@@ -286,6 +279,10 @@ buttonPressed:
 	movi r15, 1
 	bgt r8, r15, analyzeInput 	#Process the switch input, in case the user has finished inputing coordinates for one of his/her ships
 inputLoopContinued:
+	movia r15, 10000000
+	movi r23, 7
+	beq r8, r23, wait		# Give some time for the last ship to be drawn
+waitOver:
 	movi r15, 11
 	bge r8, r15, resetState
 	movi r15, 9
@@ -297,7 +294,7 @@ checkForPlayerVictory:
 	stw r8, 8(sp)
 	mov r4, r8
 	call registerHits
-	br disableTimerInterrupt:
+	br disableTimerInterrupt
 timerStopped:
 	mov r16, r0
 	mov r17, r0
@@ -407,21 +404,25 @@ playSplashSound:
 	br playSound
 	
 retrieveHitLeftSample:
+	beq r16, r0, LEFT_SAMPLE_CONTINUED	# Don't load anything from memory if the hit sound isn't supposed to be playing
 	ldh r20, 0(r16)
 	addi r16, r16, 2
 	br LEFT_SAMPLE_CONTINUED
 	
 retrieveSplashLeftSample:
+	beq r17, r0, ADD_LEFT_SAMPLES	# Don't load anything from memory if the splash sound isn't supposed to be playing
 	ldh r21, 0(r17)
 	addi r17, r17, 2
 	br ADD_LEFT_SAMPLES
 	
 retrieveHitRightSample:
+	beq r16, r0, RIGHT_SAMPLE_CONTINUED	# Don't load anything from memory if the hit sound isn't supposed to be playing
 	ldh r20, 0(r16)
 	addi r16, r16, 2
 	br RIGHT_SAMPLE_CONTINUED
 	
 retrieveSplashRightSample:
+	beq r17, r0, ADD_RIGHT_SAMPLES	# Don't load anything from memory if the splash sound isn't supposed to be playing
 	ldh r21, 0(r17)
 	addi r17, r17, 2
 	br ADD_RIGHT_SAMPLES
@@ -473,5 +474,8 @@ drawGrids:
 	addi sp, sp, 4
 	ret
 	
-	
+wait:
+	subi r15, r15, 1
+	bgtu r15, r0, wait
+	br waitOver
 	

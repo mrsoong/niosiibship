@@ -1,11 +1,13 @@
 /* This file includes functions that are used to output primitives,
  * texts and complex structures to the VGA adapter
- * Also includes various functions used for the game
+ * Also includes various other functions used for the game
+ *
  * The Bresenham's line algorithm is based off the pseudocode 
  * on https://en.wikipedia.org/wiki/Bresenham's_line_algorithm
  * The functions used to draw triangles are based off of the 
  * code that can be found on this site:
  * http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
+ * 3rd party functions were included in the project, after obtaining permission from Prof Anderson to do so
  *
  * NOTE: Needs the linker flag -lm to work!!!!!!!!!!!!!!!
  */
@@ -21,8 +23,10 @@ struct Vertice {
 
 // Prototypes
 void drawVerticalLine (int x0, int y0, int x1, int y1, short color);
+void clearText();
 
 // Global variables
+volatile char * character_buffer = (char *) 0x09000000;
 int square[2][8][8];	/* There a two 8x8 grids that will be displayed
 						   the first one belongs to the player and the other belongs
 						   to the AI controlled opponent
@@ -41,8 +45,8 @@ int invalidInput = 0;
 int processInput (int input, int state) {
 	/* Various states in the game (can also be found in main.s)
 							   1 - Start screen
-							   2 - Waiting for x coordinate of the 1x4 battleship
-							   3 - Waiting for y coordinate of the 1x4 battleship
+							   2 - Waiting for x coordinate of the 1x4 battleship/cruiser
+							   3 - Waiting for y coordinate of the 1x4 battleship/cruiser
 							   4 - Waiting for x coordinate of the 1x3 cruiser
 							   5 - Waiting for y coordinate of the 1x3 cruiser
 							   6 - Waiting for x coordinate of the 1x2 destroyer
@@ -82,6 +86,10 @@ int processInput (int input, int state) {
 				if (invalidInput == 1) {
 					return -1;
 				}
+				
+				// Input is valid, so store the positions for the ship
+				battleshipPos[0][0] = inputs[2];
+				battleshipPos[0][1] = inputs[3];
 				y = inputs[3];
 				for (x = inputs[2]; x < inputs[2] + 4; x++) {
 					square[0][x][y] = 2;
@@ -104,6 +112,10 @@ int processInput (int input, int state) {
 				if (invalidInput == 1) {
 					return -1;
 				}
+				
+				// Input is valid, so store the positions for the ship
+				battleshipPos[1][0] = inputs[4];
+				battleshipPos[1][1] = inputs[5];
 				y = inputs[5];
 				for (x = inputs[4]; x < inputs[4] + 3; x++) {
 					square[0][x][y] = 2;
@@ -126,6 +138,10 @@ int processInput (int input, int state) {
 				if (invalidInput == 1) {
 					return -1;
 				}
+				
+				// Input is valid, so store the positions for the ship
+				battleshipPos[2][0] = inputs[6];
+				battleshipPos[2][1] = inputs[7];
 				y = inputs[7];
 				for (x = inputs[6]; x < inputs[6] + 2; x++) {
 					square[0][x][y] = 2;
@@ -162,11 +178,11 @@ int checkVictoryConditions () {
 			}
 		}
 	}
-	if (hitCounter[0] == squaresToBeHit) {
+	if (hitCounter[0] >= squaresToBeHit) {
 		// All of the player's ships have been hit, 
 		return 2;					
 	}
-	if (hitCounter[1] == squaresToBeHit) {
+	if (hitCounter[1] >= squaresToBeHit) {
 		// All of the AI's ships have been hit
 		return 1;
 	}
@@ -183,6 +199,9 @@ int registerHits(int state) {
 		square[1][inputs[8]][inputs[9]] = 3;
 		return 0;
 	}
+	else if ((square[1][inputs[8]][inputs[9]] == 3) || (square[1][inputs[8]][inputs[9]] == 4)) {
+		return 0;
+	}
 	else
 		return -1;
 }
@@ -193,7 +212,7 @@ void initializeSquares () {
 		for (y = 0; y < 8; y++) {
 			square[0][x][y] = 1;
 			square[1][x][y] = 1;
-			// square[1][x][y] = 2;
+			// square[1][x][y] = 4;
 		}
 	}
 	for (y = 0; y < 12; y++) {
@@ -214,6 +233,7 @@ void initializeSquares () {
  * ends at (x1, y1) goes down and/or to the right.
  */
 void drawLine (int x0, int y0, int x1, int y1, short color) {
+	
 	float deltax = x1-x0;
 	float deltay = y1-y0;
 	float error = 0;
@@ -286,7 +306,8 @@ void colorGrid (int grid1x, int grid1y, int grid2x, int grid2y) {
 			// Draw vertical lines to fill each of the squares in the displayed grids
 			y = grid1y + (10 * row) + 1;
 			for (x = grid1x + (10 * column) + 1; x < (grid1x + (10 * column)) + 10; x++) {
-				drawLine(x, y, x, y + 8, squareRGB[square[0][column][row]]);
+				if (square[0][column][row] != 2)
+					drawLine(x, y, x, y + 8, squareRGB[square[0][column][row]]);
 			}
 			y = grid2y + (10 * row) + 1;
 			for (x = grid2x + (10 * column) + 1; x < (grid2x + (10 * column) + 10); x++) {
@@ -320,7 +341,7 @@ void fillBottomFlatTriangle(struct Vertice v1, struct Vertice v2, struct Vertice
 
   for (scanlineY = v1.y; scanlineY <= v2.y; scanlineY++)
   {
-    drawLine((int)curx1, scanlineY, (int)curx2, scanlineY, 0x1544);
+    drawLine((int)curx1, scanlineY, (int)curx2, scanlineY, 0xC618);
     curx1 += invslope1;
     curx2 += invslope2;
   }
@@ -336,11 +357,11 @@ void fillTopFlatTriangle(struct Vertice v1, struct Vertice v2, struct Vertice v3
   
   int scanlineY;
 
-  for (int scanlineY = v3.y; scanlineY > v1.y; scanlineY--)
+  for (scanlineY = v3.y; scanlineY > v1.y; scanlineY--)
   {
     curx1 -= invslope1;
     curx2 -= invslope2;
-    drawLine((int)curx1, scanlineY, (int)curx2, scanlineY, 0x1544);
+    drawLine((int)curx1, scanlineY, (int)curx2, scanlineY, 0xC618);
   }
 }
 
@@ -355,17 +376,18 @@ void drawTriangle(struct Vertice v1, struct Vertice v2, struct Vertice v3)
     fillBottomFlatTriangle(v1, v2, v3);
   }
   /* check for trivial case of top-flat triangle */
-  else if (vt1.y == vt2.y)
+  else if (v1.y == v2.y)
   {
-    fillTopFlatTriangle(g, vt1, vt2, vt3);
+    fillTopFlatTriangle(v1, v2, v3);
   }
   else
   {
     /* general case - split the triangle in a topflat and bottom-flat one */
-    Vertice v4 = new Vertice(
-      (int)(vt1.x + ((float)(vt2.y - vt1.y) / (float)(vt3.y - vt1.y)) * (vt3.x - vt1.x)), vt2.y);
-    fillBottomFlatTriangle(g, vt1, vt2, v4);
-    fillTopFlatTriangle(g, vt2, v4, vt3);
+	struct Vertice v4;
+	v4.x = (int)(v1.x + ((float)(v2.y - v1.y) / (float)(v3.y - v1.y)) * (v3.x - v1.x));
+	v4.y = v2.y;
+    fillBottomFlatTriangle(v1, v2, v4);
+    fillTopFlatTriangle(v2, v4, v3);
   }
 }
 
@@ -380,62 +402,37 @@ void drawShips() {
 		if ((battleshipPos[i][0] != -1) && (battleshipPos[i][1] != -1)) {
 			switch (i) {
 				case 0:
-					firstSquareX = battleshipPos[0][0] * 10;
-					firstSquareY = battleshipPos[0][1] * 10;
+					firstSquareX = (battleshipPos[0][0] * 10) + 50;
+					firstSquareY = (battleshipPos[0][1] * 10) + 50;
 					v1.x = firstSquareX + 10;
 					v1.y = firstSquareY + 2;
 					v2.x = firstSquareX + 5;
-					v2.y = firstSquareX + 5;
+					v2.y = firstSquareY + 5;
 					v3.x = firstSquareX + 10;
-					v3.y = firstSquareX + 7;
-					drawTriangle(v1, v2, v3)
-					fillRectangle(firstSquareX + 10, firstSquareY + 2, 10, 5, 0x1544);
-					fillRectangle(firstSquareX + 20, firstSquareY + 2, 10, 5, 0x1544);
-					v1.x = firstSquareX + 30;
-					v1.y = firstSquareY + 2;
-					v2.x = firstSquareX + 35;
-					v2.y = firstSquareX + 5;
-					v3.x = firstSquareX + 30;
-					v3.y = firstSquareX + 7;
-					drawTriangle(v1, v2, v3)
+					v3.y = firstSquareY + 7;
+					drawTriangle(v1, v2, v3);
+					fillRectangle(firstSquareX + 10, firstSquareY + 2, 10, 5, 0xC618);
+					fillRectangle(firstSquareX + 20, firstSquareY + 2, 10, 5, 0xC618);
+					fillRectangle(firstSquareX + 30, firstSquareY + 2, 10, 5, 0xC618);
 					break;
 				case 1:
-					firstSquareX = battleshipPos[0][0] * 10;
-					firstSquareY = battleshipPos[0][1] * 10;
-					v1.x = firstSquareX + 10;
-					v1.y = firstSquareY + 2;
-					v2.x = firstSquareX + 5;
-					v2.y = firstSquareX + 5;
-					v3.x = firstSquareX + 10;
-					v3.y = firstSquareX + 7;
-					drawTriangle(v1, v2, v3)
-					fillRectangle(firstSquareX + 10, firstSquareY + 2, 10, 5, 0x1544);
-					v1.x = firstSquareX + 20;
-					v1.y = firstSquareY + 2;
-					v2.x = firstSquareX + 25;
-					v2.y = firstSquareX + 5;
-					v3.x = firstSquareX + 20;
-					v3.y = firstSquareX + 7;
-					drawTriangle(v1, v2, v3)
+					firstSquareX = (battleshipPos[1][0] * 10) + 50;
+					firstSquareY = (battleshipPos[1][1] * 10) + 50;
+					fillRectangle(firstSquareX + 10, firstSquareY + 2, 10, 5, 0xC618);
+					fillRectangle(firstSquareX + 20, firstSquareY + 2, 10, 5, 0xC618);
+					fillRectangle(firstSquareX + 30, firstSquareY + 2, 10, 5, 0xC618);
 					break;
 				case 2:
-					firstSquareX = battleshipPos[0][0] * 10;
-					firstSquareY = battleshipPos[0][1] * 10;
+					firstSquareX = (battleshipPos[2][0] * 10) + 50;
+					firstSquareY = (battleshipPos[2][1] * 10) + 50;
 					v1.x = firstSquareX + 5;
 					v1.y = firstSquareY + 2;
 					v2.x = firstSquareX + 1;
-					v2.y = firstSquareX + 5;
+					v2.y = firstSquareY + 5;
 					v3.x = firstSquareX + 5;
-					v3.y = firstSquareX + 7;
-					drawTriangle(v1, v2, v3)
-					fillRectangle(firstSquareX + 5, firstSquareY + 2, 10, 5, 0x1544);
-					v1.x = firstSquareX + 15;
-					v1.y = firstSquareY + 2;
-					v2.x = firstSquareX + 19;
-					v2.y = firstSquareX + 5;
-					v3.x = firstSquareX + 15;
-					v3.y = firstSquareX + 7;
-					drawTriangle(v1, v2, v3)
+					v3.y = firstSquareY + 7;
+					drawTriangle(v1, v2, v3);
+					fillRectangle(firstSquareX + 5, firstSquareY + 2, 10, 5, 0xC618);
 					break;
 			}
 		}
@@ -456,10 +453,11 @@ void printText (int x, int y, int state) {
 	// Clear the entire line in the character buffer
 	int i;
 	char *blank = " ";
-	for (i = 0; i < 80; i++) {
+	/*for (i = 0; i < 80; i++) {
 		write_char(i, y, *blank);
 		write_char(i, y + 1, *blank);
-	}
+	}*/
+	clearText();
 	
 	char *text[13];
 	text[1] = "Press Key 1 to begin";
@@ -491,6 +489,16 @@ void printText (int x, int y, int state) {
 			write_char(currentX, (y + 1), *current);
 			currentX++;
 			current++;
+		}
+	}
+}
+
+void clearText() {
+	int x, y;
+	char *blank = " ";
+	for (x = 0; x < 80; x++) {
+		for (y = 0; y < 60; y++) {
+			write_char(x, y, *blank);
 		}
 	}
 }
