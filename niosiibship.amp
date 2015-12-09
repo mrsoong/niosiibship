@@ -19,7 +19,7 @@
             <source_file filepath="true">vga/ship.h</source_file>
         </source_files>
         <options>
-            <compiler_flags>-g -O1 -ffunction-sections -fverbose-asm -fno-inline -mno-cache-volatile -I //SRVB/Homes$/songyan9/Documents/Labs/niosiibship-master/</compiler_flags>
+            <compiler_flags>-g -O1 -ffunction-sections -fverbose-asm -fno-inline -mno-cache-volatile -I //SRVB/Homes$/wangyuc8/Documents/Labs/niosiibship-master/</compiler_flags>
             <linker_flags>-lm</linker_flags>
             <emulate_unimpl_instructions>true</emulate_unimpl_instructions>
             <use_small_c_library>false</use_small_c_library>

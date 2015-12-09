@@ -1,0 +1,26 @@
+December 07, 2015
+-Steven: Added support for audio 
+-Steven: Fixed bugs with the game logic
+-Yuchen: Fixed bug with the AI that caused to attack squares at random
+
+December 06, 2015
+-Steven: Added a function to draw triangles
+-Steven: The game can now draw ships
+
+November 24, 2015
+-Steven: Got rid of bugs with switch/button input support
+-Yuchen: Added AI functionality to the game (not fully implemented)
+-Steven: Added switch/button input support
+-Steven: Added a function to output text into the VGA's character buffer
+
+November 17, 2015
+-Steven&Yuchen: Made the VGA subroutines/functions work with a timer interrupt
+-Steven: Began working on the fillRectangle function
+-Steven: Made a function to draw grids 
+
+November 16, 2015
+-Steven: Finished writing the line drawing function
+
+November 15, 2015
+-Steven: Began writing a line drawing function in C
+-Steven: Wrote a function to draw individual pixels on VGA

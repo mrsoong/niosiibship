@@ -1,0 +1,1 @@
+Note that the project directory has to be changed from .../c4songyb/... to the directory that the project files are currently residing in, or else the project will most likely refuse to compile

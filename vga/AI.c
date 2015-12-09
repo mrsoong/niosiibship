@@ -12,12 +12,13 @@
 
 //[x][y][hit (1 or 0 bool)]
 int grid[GRID_SIZE][GRID_SIZE];
-int previous[2];
-int hit_prev = NOT_HIT;
+int *previous;
+int hit_prev;
 time_t t;
 
 //Initiallizes the map grid the AI uses. Call at start of game.
 void init_grid(){
+	hit_prev = NOT_HIT;
 	srand((unsigned) time(&t));
 	int i;
 	for (i = 0; i < GRID_SIZE; i++) {
@@ -58,7 +59,6 @@ void place_ships(){
 		}
 
 	valid = 0;
-	printf("x: %d, y: %d\n", x, y);
 
 	while (valid == 0) {
 		//Place SB
@@ -178,6 +178,7 @@ int *choose_square() {
 	grid[x][y] = HIT;
 	result[GRID_X] = x;
 	result[GRID_Y] = y;
+	previous = result;
 
 	return result;
 }

@@ -6,7 +6,7 @@
  * Note: Starting address of main should be set to 0x1000,
  * to avoid conflicts with the interrupt subroutine
  *
- * Grids: A black square in your grid indicates that a ship is currently occuping that square
+ * Grids: A blue square indicates that the square is empty
  *        A red square indicates that a part of a ship thats currently occupying
  *        that square has been hit
  *        A white square indicates that a shell has been fired at that square, without 
